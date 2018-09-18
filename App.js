@@ -14,8 +14,8 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { getRestaurents } from "./Zomato";
-import ListPageItem from "./ListPageItem";
+import { getRestaurents } from "./src/Zomato";
+import ListPageItem from "./src/ListPageItem";
 console.disableYellowBox = true;
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const SCREEN_WIDTH = Dimensions.get("window").width;

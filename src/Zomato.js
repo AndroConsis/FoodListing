@@ -1,4 +1,4 @@
-const zomatoKey = ""; //place your key here
+const zomatoKey = "";
 const BASE_URL = "https://developers.zomato.com/api/v2.1";
 
 export const getCategories = () => {
