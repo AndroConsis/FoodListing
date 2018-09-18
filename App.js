@@ -6,32 +6,19 @@
 
 import React, { Component } from "react";
 import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  PanResponder,
+  StatusBar,
   StyleSheet,
   View,
-  Text,
-  Dimensions,
-  Image,
-  Animated,
-  PanResponder,
-  StatusBar
 } from "react-native";
-import { getCategories } from "./Zomato";
+import { getRestaurents } from "./Zomato";
 import ListPageItem from "./ListPageItem";
-
+console.disableYellowBox = true; 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const SCREEN_WIDTH = Dimensions.get("window").width;
-
-const articles = [
-  // { id: "1", uri: require("./assets/1.jpg") },
-  // { id: "2", uri: require("./assets/2.jpg") },
-  // { id: "3", uri: require("./assets/3.jpg") },
-  // { id: "4", uri: require("./assets/4.jpg") },
-  // { id: "5", uri: require("./assets/5.jpg") },
-  // { id: "6", uri: require("./assets/6.jpg") }
-];
-
-const text =
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed doeiusmod tempor incididunt ut labore et dolore magna aliqua.Utenim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Utenim ad minim veniam, quis nostrud exercitation ullamco laborisnisi ut aliquip ex ea commodo consequat.Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiatnulla pariatur.Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
 export default class App extends Component {
   constructor(props) {
@@ -43,13 +30,47 @@ export default class App extends Component {
     this.scale = new Animated.Value(0.9);
     this.state = {
       currentIndex: 0,
-      articles: []
+      articles: [],
+      isLoading: true
+    };
+    this.nextCardAnimation = {
+      transform: [
+        {
+          scale: this.position.y.interpolate({
+            inputRange: [-SCREEN_HEIGHT, 0, 200],
+            outputRange: [1, 0.85, 0.85],
+            extrapolate: "clamp"
+          })
+        }
+      ],
+      opacity: this.position.y.interpolate({
+        inputRange: [-SCREEN_HEIGHT, 0, 200],
+        outputRange: [1, 0, 0],
+        extrapolate: "clamp"
+      })
+    };
+
+    this.currentCardAnimation = {
+      transform: [
+        {
+          scale: this.swipedCardPosition.y.interpolate({
+            inputRange: [-SCREEN_HEIGHT, 0, 200],
+            outputRange: [1, 0.85, 0.85],
+            extrapolate: "clamp"
+          })
+        }
+      ],
+      opacity: this.swipedCardPosition.y.interpolate({
+        inputRange: [(-SCREEN_HEIGHT / 2) * 0.7, 0, 200],
+        outputRange: [1, 0.7, 0.7],
+        extrapolate: "clamp"
+      })
     };
   }
 
   componentDidMount() {
-    getCategories().then(res => {
-      this.setState({ articles: res.collections })
+    getRestaurents().then(res => {
+      this.setState({ isLoading: false, articles: res.restaurants })
     })
   }
 
@@ -59,8 +80,7 @@ export default class App extends Component {
     this.topPanResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (evt, gestureState) => {
-        console.log(gestureState);
-        this.topViewPosition.setValue({x: gestureState.dx});
+        this.topViewPosition.setValue({ x: gestureState.dx });
       },
       onPanResponderRelease: () => {
 
@@ -109,13 +129,11 @@ export default class App extends Component {
           });
         } else {
           Animated.parallel([
-            Animated.spring(this.position, {
+            Animated.timing(this.position, {
               toValue: { x: 0, y: 0 },
-              bounciness: 2
             }),
-            Animated.spring(this.swipedCardPosition, {
+            Animated.timing(this.swipedCardPosition, {
               toValue: { x: 0, y: -SCREEN_HEIGHT },
-              bounciness: 2
             })
           ]).start();
         }
@@ -123,55 +141,45 @@ export default class App extends Component {
     });
   }
 
-  renderarticles = () => {
+  renderPage = (item, i) => {
     const { articles } = this.state;
-    const nextCardAnimation = {
-      transform: [
-        {
-          scale: this.position.y.interpolate({
-            inputRange: [-SCREEN_HEIGHT, 0, 200],
-            outputRange: [1, 0.85, 0.85],
-            extrapolate: "clamp"
-          })
-        }
-      ],
-      opacity: this.position.y.interpolate({
-        inputRange: [(-SCREEN_HEIGHT / 2) * 0.7, 0, 200],
-        outputRange: [1, 0.7, 0.7],
-        extrapolate: "clamp"
-      })
-    };
+    const addr = item.restaurant.location.address;
+    const addrArr = addr.split(",");
+    addrArr.pop();
+    addrArr.pop();
+    return (
+      <ListPageItem
+        title={item.restaurant.name}
+        description={addrArr.toString()}
+        imageUrl={item.restaurant.featured_image}
+        aggregateRating={item.restaurant.user_rating.aggregate_rating}
+        ratingColor={item.restaurant.user_rating.rating_color}
+        averageCost={item.restaurant.average_cost_for_two}
+        resId={item.restaurant.R.res_id}
+        cuisines={item.restaurant.cuisines}
+      />
+    )
+  }
 
-    const currentCardAnimation = {
-      transform: [
-        {
-          scale: this.swipedCardPosition.y.interpolate({
-            inputRange: [-SCREEN_HEIGHT, 0, 200],
-            outputRange: [1, 0.85, 0.85],
-            extrapolate: "clamp"
-          })
-        }
-      ],
-      opacity: this.swipedCardPosition.y.interpolate({
-        inputRange: [(-SCREEN_HEIGHT / 2) * 0.7, 0, 200],
-        outputRange: [1, 0.7, 0.7],
-        extrapolate: "clamp"
-      })
-    };
+  renderarticles = () => {
+    const { articles, isLoading } = this.state;
+
+    if (isLoading) {
+      return <View style={styles.spinner}>
+        <ActivityIndicator size={"large"} color={"white"} />
+      </View>
+    }
 
     return articles.map((item, i) => {
       if (i == this.state.currentIndex - 1) {
         return (
           <Animated.View
-            key={item.collection.collection_id}
+            key={i}
             style={this.swipedCardPosition.getLayout()}
             {...this.panResponder.panHandlers}
           >
             <View style={styles.page}>
-              <ListPageItem
-                title={item.collection.title}
-                description={item.collection.description}
-                imageUrl={articles[i].collection.image_url}></ListPageItem>
+              {this.renderPage(item, i)}
             </View>
           </Animated.View>
         );
@@ -182,15 +190,12 @@ export default class App extends Component {
       if (i == this.state.currentIndex) {
         return (
           <Animated.View
-            key={item.collection.collection_id}
+            key={i}
             style={this.position.getLayout()}
             {...this.panResponder.panHandlers}
           >
-            <Animated.View style={[styles.page, currentCardAnimation]}>
-              <ListPageItem
-                title={item.collection.title}
-                description={item.collection.description}
-                imageUrl={articles[i].collection.image_url}></ListPageItem>
+            <Animated.View style={[styles.page, this.currentCardAnimation]}>
+              {this.renderPage(item, i)}
             </Animated.View>
           </Animated.View>
         );
@@ -199,13 +204,10 @@ export default class App extends Component {
       if (i == this.state.currentIndex + 1) {
         return (
           <Animated.View key={item.id}
-            key={item.collection.collection_id}
+            key={i}
           >
-            <Animated.View style={[styles.page, nextCardAnimation]}>
-              <ListPageItem
-                title={item.collection.title}
-                description={item.collection.description}
-                imageUrl={articles[i].collection.image_url}></ListPageItem>
+            <Animated.View style={[styles.page, this.nextCardAnimation]}>
+              {this.renderPage(item, i)}
             </Animated.View>
           </Animated.View>
         );
@@ -233,7 +235,14 @@ export default class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "black"
+    backgroundColor: "rgba(0, 0, 0, .92)",
+  },
+  spinner: {
+    position: "absolute",
+    justifyContent: "center",
+    alignItems: "center",
+    height: SCREEN_HEIGHT,
+    width: SCREEN_WIDTH
   },
   page: {
     flex: 1,
@@ -242,6 +251,5 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     backgroundColor: "white",
     borderRadius: 10,
-    overflow: "hidden"
   }
 });
