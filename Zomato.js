@@ -1,4 +1,5 @@
-const zomatoKey = ""; // place your zomato key here
+const zomatoKey = ""; //place your key here
+const BASE_URL = "https://developers.zomato.com/api/v2.1";
 
 export const getCategories = () => {
     return fetch("https://developers.zomato.com/api/v2.1/collections?city_id=5&count=20", {
@@ -13,8 +14,9 @@ export const getCategories = () => {
         });
 }
 
-export const getRestaurents = () => {
-    return fetch("https://developers.zomato.com/api/v2.1/search?entity_id=3403&entity_type=subzone&count=50", {
+export const getRestaurents = (lat, long) => {
+    const url = `${BASE_URL}/search?lat=${lat}&lon=${long}&sort=real_distance&order=desc`
+    return fetch(url, {
         method: 'GET',
         headers: {
             "Accept": 'application/json',

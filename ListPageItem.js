@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { View, Text, Image } from 'react-native';
-import { getReviews } from "./Zomato"
 import LoopReviews from "./LoopReviews";
 import Cuisines from "./Cuisines";
 
@@ -9,14 +8,8 @@ export default class ListPageItem extends Component {
         userReviews: []
     }
 
-    componentDidMount() {
-        getReviews(this.props.resId).then(response => {
-            this.setState({userReviews: response.user_reviews})
-        })
-    }
-
     render() {
-        const { title, description, imageUrl, aggregateRating, ratingColor, averageCost, cuisines } = this.props;
+        const { title, description, imageUrl, aggregateRating, averageCost, cuisines, resId } = this.props;
         return (
             <View style={{ flex: 1 }}>
                 <View style={{ flex: 4 }}>
@@ -29,7 +22,7 @@ export default class ListPageItem extends Component {
                     <Text style={{fontSize: 20}}>{title}</Text>
                     <Text style={{fontSize: 12, marginTop: 3, color: "gray"}} >{description}</Text>
                     <Text style={{color: "rebeccapurple", marginTop: 6}}>₹{ averageCost } for two people (approx.)</Text>
-                    <LoopReviews reviews={this.state.userReviews}/>
+                    <LoopReviews resId={resId}/>
                     <Cuisines cuisines={cuisines.split(", ")}/>
                 </View>
             </View>

@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { getRestaurents } from "./Zomato";
 import ListPageItem from "./ListPageItem";
-console.disableYellowBox = true; 
+console.disableYellowBox = true;
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -69,9 +69,16 @@ export default class App extends Component {
   }
 
   componentDidMount() {
-    getRestaurents().then(res => {
-      this.setState({ isLoading: false, articles: res.restaurants })
-    })
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        getRestaurents(position.coords.latitude, position.coords.longitude).then(res => {
+          this.setState({ isLoading: false, articles: res.restaurants })
+        }).catch(error => alert(JSON.stringify(error)))
+      },
+      (error) => alert(error.message),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 },
+    );
+    return;
   }
 
   componentWillMount() {
@@ -103,8 +110,8 @@ export default class App extends Component {
       onPanResponderRelease: (evt, gestureState) => {
         if (
           this.state.currentIndex > 0 &&
-          gestureState.dy > 50 &&
-          gestureState.vy > 0.5
+          (gestureState.dy > 50 ||
+          gestureState.vy > 0.5)
         ) {
           Animated.timing(this.swipedCardPosition, {
             toValue: { x: 0, y: 0 },
@@ -116,8 +123,8 @@ export default class App extends Component {
             this.swipedCardPosition.setValue({ x: 0, y: -SCREEN_HEIGHT });
           });
         } else if (
-          -gestureState.dy > 50 &&
-          -gestureState.vy > 0.5 &&
+          (-gestureState.dy > SCREEN_HEIGHT * .3 ||
+          -gestureState.vy > 0.5) &&
           this.state.currentIndex !== articles.length - 1
         ) {
           Animated.timing(this.position, {

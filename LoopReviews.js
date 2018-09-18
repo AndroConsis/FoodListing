@@ -1,11 +1,20 @@
 import React, { PureComponent } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
-import TimerMixin from 'react-timer-mixin';
+import { getReviews } from "./Zomato"
 
 export default class LoopReviews extends PureComponent {
-    currentIndex = 1;
-    state = { review: "" }
+    currentIndex = 0;
+    state = { review: "", reviews: [] }
     interval = null;
+
+    componentDidMount() {
+        getReviews(this.props.resId).then(response => {
+            if (response["user_reviews"] && response["user_reviews"].length > 0) {
+                this.setState({ reviews: [...response.user_reviews] })
+                this.startTimer();
+            }
+        })
+    }
 
     startTimer = () => {
         this.interval = setInterval(() => {
@@ -13,18 +22,17 @@ export default class LoopReviews extends PureComponent {
         }, 5000)
     }
 
-    componentDidMount() {
-        this.startTimer()
-    }
-
     componentWillUnmount() {
         if (this.interval) clearInterval(this.interval);
     }
 
     increaseCount = () => {
-        if (this.currentIndex + 1 == this.props.reviews.length) { this.currentIndex = 0 }
-        else { this.currentIndex = this.currentIndex + 1; }
-        this.setState({ review: this.props.reviews[this.currentIndex].review.review_text });
+        if (this.currentIndex + 1 == this.state.reviews.length) { this.currentIndex = 0 }
+        else {
+            this.currentIndex = this.currentIndex + 1;
+            if (this.state.reviews[this.currentIndex]["review"] && this.state.reviews[this.currentIndex]["review"]["review_text"])
+                this.setState({ review: this.state.reviews[this.currentIndex].review.review_text });
+        }
     }
 
     render() {
